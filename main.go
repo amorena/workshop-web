@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var (
@@ -34,9 +35,12 @@ func serveIndex() http.Handler {
 			return
 		}
 		requests.Inc()
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		zero := float64(0)
+		m := &dto.Metric{Counter: &dto.Counter{Value: &zero}}
+		requests.Write(m)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello, is it me you're looking for?"))
+		w.Write([]byte(fmt.Sprintf("Hello, is it me you're looking for?<br/>Counter is %f", m.Counter.GetValue())))
 	})
 }
 
