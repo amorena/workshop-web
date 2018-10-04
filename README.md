@@ -208,7 +208,7 @@ spec:
       app: workshop-web
 ```
 
-Not that we've added a new Object to our deployment manifest called `ServiceMonitor`.
+Note that we've added a new Object to our deployment manifest called `ServiceMonitor`.
 
 ## Manual deploy to OKE
 
@@ -250,7 +250,7 @@ hit url
 show graph
 
 ## Profit
-foo
+Monitor all the things
 
 ---
 #
