@@ -1,0 +1,39 @@
+# This template file will have its environment variables expanded
+# and the .template extension removed by the bash-template Wercker step.
+# See wercker.yml.
+
+# Service Definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: ws-web
+  labels:
+    app: ws-web
+    commit: ${WERCKER_RUN_ID}
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: ws-web
+    commit: ${WERCKER_RUN_ID}
+---
+# Ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ws-web-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: ${APP_HOSTNAME} 
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: ws-web
+          servicePort: 8080

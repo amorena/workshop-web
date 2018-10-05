@@ -47,23 +47,48 @@ push-release:
         password: $DOCKER_PASSWORD
         repository: $DOCKER_REPO
         registry: https://iad.ocir.io/v2
+        tag: $DOCKER_TAG 
 
+# Deploy to a Kubernetes cluster
 deploy-to-kubernetes:
+    # We only need a minimal shell environment to run Kubectl.
     box:
         id: alpine
         cmd: /bin/sh
-
     steps:
+    # https://github.com/wercker/step-bash-template
+    # This Wercker step will look for files in our repo with a .template extension.
+    # It will expand any environment variables in those files, then remove the
+    # template extension.
     - bash-template
 
+    # The step above should leave us with a Kubernetes service and deployment yml files.
+    # We'll create a directory to move them to.
     - script:
-        name: "Show kubernetes configuration"
+        name: Prepare Kubernetes files
         code: |
-          cat kubernetes.yml
+          ls -lth
+          cat kubernetes_*.yml
+          mkdir $WERCKER_OUTPUT_DIR/kubernetes
+          mv kubernetes_*.yml $WERCKER_OUTPUT_DIR/kubernetes
 
     - kubectl:
         name: deploy to kubernetes
         server: $KUBERNETES_MASTER
-        username: $KUBERNETES_USERNAME
-        password: $KUBERNETES_PASSWORD
-        command: apply -f kubernetes.yml
+        token: $KUBERNETES_TOKEN
+        insecure-skip-tls-verify: true
+        command: apply -f $WERCKER_OUTPUT_DIR/kubernetes/
+
+    - kubectl:
+        name: set deployment timeout
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        insecure-skip-tls-verify: true
+        command: patch deployment/ws-web -p '{"spec":{"progressDeadlineSeconds":60}}'
+
+    - kubectl:
+        name: check deployment status
+        server: $KUBERNETES_MASTER
+        token: $KUBERNETES_TOKEN
+        insecure-skip-tls-verify: true
+        command: rollout status deployment/ws-web
